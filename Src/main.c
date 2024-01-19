@@ -18,12 +18,17 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "i2c.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include <string.h>
+#include "motor.h"
+#include "imu.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -33,6 +38,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define IMU_ADDR 0x68
 
 /* USER CODE END PD */
 
@@ -65,7 +71,9 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  uint8_t MSG[32] = {'\0'};
+  char MSG[32] = {'\0'};
+  int8_t err;
+  int16_t acc_x;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -87,7 +95,11 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
+  MX_I2C3_Init();
+  MX_TIM3_Init();
+  MX_TIM10_Init();
   /* USER CODE BEGIN 2 */
+  drive_forwards(0.25);
 
   /* USER CODE END 2 */
 
@@ -95,9 +107,20 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    sprintf(MSG, "hello\r\n");
-    HAL_UART_Transmit(&huart2, MSG, sizeof(MSG), 100);
+    // Init IMU
+    err = softreset();
+    sprintf(MSG, "reseterr=%x\r\n", err);
+    HAL_UART_Transmit(&huart2, (uint8_t*)MSG, strlen(MSG), 100);
+    err = normalmodes();
+    sprintf(MSG, "normalmodeerr=%x\r\n", err);
+    HAL_UART_Transmit(&huart2, (uint8_t*)MSG, strlen(MSG), 100);
+    // Read IMU
+    err = read_acc_x(&acc_x);
+    sprintf(MSG, "imu=%d\r\n", acc_x);
+    HAL_UART_Transmit(&huart2, (uint8_t*)MSG, strlen(MSG), 100);
     HAL_Delay(1000);
+
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

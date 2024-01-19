@@ -1,8 +1,6 @@
 #include "imu.h"
 #include "i2c.h"
 
-#define IMU_ADDR 0x68
-
 uint8_t softreset() {
     uint8_t err;
     uint8_t tx_buffer[] = {0x7E, 0xB6};

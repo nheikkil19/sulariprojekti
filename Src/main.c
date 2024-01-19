@@ -29,6 +29,8 @@
 #include <string.h>
 #include "motor.h"
 #include "imu.h"
+#include "uds.h"
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -38,7 +40,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define IMU_ADDR 0x68
 
 /* USER CODE END PD */
 
@@ -74,6 +75,7 @@ int main(void)
   char MSG[32] = {'\0'};
   int8_t err;
   int16_t acc_x;
+  float dist;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -99,7 +101,8 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM10_Init();
   /* USER CODE BEGIN 2 */
-  drive_forwards(0.25);
+  // Drive motors
+  // drive_forwards(0.25);
 
   /* USER CODE END 2 */
 
@@ -118,9 +121,12 @@ int main(void)
     err = read_acc_x(&acc_x);
     sprintf(MSG, "imu=%d\r\n", acc_x);
     HAL_UART_Transmit(&huart2, (uint8_t*)MSG, strlen(MSG), 100);
+
+    // Read distance
+    err = get_distance(&dist);
+    sprintf(MSG, "dist=%dcm\r\n", (int)dist);
+    HAL_UART_Transmit(&huart2, (uint8_t*)MSG, strlen(MSG), 100);
     HAL_Delay(1000);
-
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

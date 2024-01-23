@@ -100,9 +100,17 @@ int main(void)
   MX_I2C3_Init();
   MX_TIM3_Init();
   MX_TIM10_Init();
+  MX_TIM11_Init();
   /* USER CODE BEGIN 2 */
   // Drive motors
   // drive_forwards(0.25);
+  // Init IMU
+  err = softreset();
+  sprintf(MSG, "reseterr=%x\r\n", err);
+  HAL_UART_Transmit(&huart2, (uint8_t*)MSG, strlen(MSG), 100);
+  err = normalmodes();
+  sprintf(MSG, "normalmodeerr=%x\r\n", err);
+  HAL_UART_Transmit(&huart2, (uint8_t*)MSG, strlen(MSG), 100);
 
   /* USER CODE END 2 */
 
@@ -110,13 +118,6 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    // Init IMU
-    err = softreset();
-    sprintf(MSG, "reseterr=%x\r\n", err);
-    HAL_UART_Transmit(&huart2, (uint8_t*)MSG, strlen(MSG), 100);
-    err = normalmodes();
-    sprintf(MSG, "normalmodeerr=%x\r\n", err);
-    HAL_UART_Transmit(&huart2, (uint8_t*)MSG, strlen(MSG), 100);
     // Read IMU
     err = read_acc_x(&acc_x);
     sprintf(MSG, "imu=%d\r\n", acc_x);

@@ -40,8 +40,6 @@
         * EXTI
      PA0-WKUP   ------> S_TIM2_CH1_ETR
      PB10   ------> S_TIM2_CH3
-     PA9   ------> USART1_TX
-     PA10   ------> USART1_RX
 */
 void MX_GPIO_Init(void)
 {
@@ -104,14 +102,6 @@ void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(MD_AIN2_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pins : PAPin PAPin */
-  GPIO_InitStruct.Pin = UART_TX_Pin|UART_RX_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
-  GPIO_InitStruct.Alternate = GPIO_AF7_USART1;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PBPin PBPin */
   GPIO_InitStruct.Pin = MD_AIN1_Pin|MD_BIN2_Pin;

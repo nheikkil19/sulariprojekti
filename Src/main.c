@@ -30,6 +30,7 @@
 #include "motor.h"
 #include "imu.h"
 #include "uds.h"
+#include "esp.h"
 
 /* USER CODE END Includes */
 
@@ -57,7 +58,7 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+int _write(int fd, char* ptr, int len);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -72,10 +73,8 @@ void SystemClock_Config(void);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-  char MSG[32] = {'\0'};
+  uint8_t msg[1024] = {'\0'};
   int8_t err;
-  int16_t acc_x;
-  float dist;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -101,33 +100,54 @@ int main(void)
   MX_TIM3_Init();
   MX_TIM10_Init();
   MX_TIM11_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  // Drive motors
-  // drive_forwards(0.25);
-  // Init IMU
-  err = softreset();
-  sprintf(MSG, "reseterr=%x\r\n", err);
-  HAL_UART_Transmit(&huart2, (uint8_t*)MSG, strlen(MSG), 100);
-  err = normalmodes();
-  sprintf(MSG, "normalmodeerr=%x\r\n", err);
-  HAL_UART_Transmit(&huart2, (uint8_t*)MSG, strlen(MSG), 100);
+  HAL_Delay(5000);
+  printf("Init done\n");
 
+  send_message("AT+BLEINIT=2\r\n");
+  read_message(msg, 1024);
+
+  send_message("AT+BLEGATTSSRVCRE\r\n");
+  read_message(msg, 1024);
+
+  send_message("AT+BLEGATTSSRVSTART\r\n");
+  read_message(msg, 1024);
+
+  send_message("AT+BLEADDR?\r\n");
+  read_message(msg, 1024);
+
+  send_message("AT+BLEADVPARAM=50,50,0,0,7,0,,\r\n");
+  read_message(msg, 1024);
+
+  send_message("AT+BLEADVDATA=\"0201060A09457370726573736966030302A0\"\r\n");
+  read_message(msg, 1024);
+
+  send_message("AT+BLEADVSTART\r\n");
+  read_message(msg, 1024);
+
+  // HAL_Delay(60000);
+
+  send_message("AT+BLEGATTSSRV?\r\n");
+  read_message(msg, 1024);
+
+  send_message("AT+BLEGATTSCHAR?\r\n");
+  read_message(msg, 1024);
+
+  send_message("AT+BLESPPCFG=1,1,7,1,5\r\n");
+  read_message(msg, 1024);
+
+  send_message("AT+BLESPP\r\n");
+  read_message(msg, 1024);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    // Read IMU
-    err = read_acc_x(&acc_x);
-    sprintf(MSG, "imu=%d\r\n", acc_x);
-    HAL_UART_Transmit(&huart2, (uint8_t*)MSG, strlen(MSG), 100);
-
-    // Read distance
-    err = get_distance(&dist);
-    sprintf(MSG, "dist=%dcm\r\n", (int)dist);
-    HAL_UART_Transmit(&huart2, (uint8_t*)MSG, strlen(MSG), 100);
-    HAL_Delay(1000);
+    printf("MSG=\n");
+    read_message(msg, 1024);
+    HAL_Delay(2000);
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -182,7 +202,10 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-
+int _write(int fd, char* ptr, int len) {
+  HAL_UART_Transmit(&huart2, (uint8_t *) ptr, len, HAL_MAX_DELAY);
+  return len;
+}
 /* USER CODE END 4 */
 
 /**

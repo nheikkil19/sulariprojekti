@@ -7,7 +7,7 @@
   ******************************************************************************
   * @attention
   *
-  * Copyright (c) 2023 STMicroelectronics.
+  * Copyright (c) 2024 STMicroelectronics.
   * All rights reserved.
   *
   * This software is licensed under terms that can be found in the LICENSE file
@@ -61,10 +61,6 @@ void Error_Handler(void);
 #define B1_GPIO_Port GPIOC
 #define INT_ACC_Pin GPIO_PIN_0
 #define INT_ACC_GPIO_Port GPIOA
-#define USART_TX_Pin GPIO_PIN_2
-#define USART_TX_GPIO_Port GPIOA
-#define USART_RX_Pin GPIO_PIN_3
-#define USART_RX_GPIO_Port GPIOA
 #define UDS_TRIG_Pin GPIO_PIN_4
 #define UDS_TRIG_GPIO_Port GPIOA
 #define LD2_Pin GPIO_PIN_5
@@ -81,10 +77,6 @@ void Error_Handler(void);
 #define MD_AIN2_GPIO_Port GPIOC
 #define I2C_SCL_Pin GPIO_PIN_8
 #define I2C_SCL_GPIO_Port GPIOA
-#define UART_TX_Pin GPIO_PIN_9
-#define UART_TX_GPIO_Port GPIOA
-#define UART_RX_Pin GPIO_PIN_10
-#define UART_RX_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14

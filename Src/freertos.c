@@ -133,34 +133,23 @@ void StartDefaultTask(void *argument)
   /* USER CODE BEGIN StartDefaultTask */
   HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rxbuffer, RXBUFFERSIZE);
 
-  send_message("AT+BLEINIT=2\r\n");
+  send_message("AT+CWINIT=1\r\n");
   osDelay(2000);
-  send_message("AT+BLEGATTSSRVCRE\r\n");
+  send_message("AT+CWMODE=2\r\n");
   osDelay(2000);
-  send_message("AT+BLEGATTSSRVSTART\r\n");
+  send_message("AT+CIPMUX=1\r\n");
   osDelay(2000);
-  send_message("AT+BLEADDR?\r\n");
+  send_message("AT+CWSAP=\"esp32\",\"password\",1,0,3,0\r\n");
   osDelay(2000);
-  send_message("AT+BLEADVPARAM=50,50,0,0,7,0,,\r\n");
+  send_message("AT+CWDHCP=1,1\r\n");
   osDelay(2000);
-  send_message("AT+BLEADVDATA=\"0201060A09457370726573736966030302A0\"\r\n");
+  send_message("AT+CIPSERVER=1\r\n");
   osDelay(2000);
-  send_message("AT+BLEADVSTART\r\n");
-  osDelay(2000);
-  send_message("AT+BLEGATTSSRV?\r\n");
-  osDelay(2000);
-  send_message("AT+BLEGATTSCHAR?\r\n");
-  osDelay(2000);
-  send_message("AT+BLESPPCFG=1,1,7,1,5\r\n");
-  osDelay(2000);
-  send_message("AT+BLESPP\r\n");
-  osDelay(2000);
-  printf("Messages sent\n");
 
   /* Infinite loop */
   for(;;)
   {
-    printf("Task1\n");
+    // printf("Task1\n");
     osDelay(1000);
   }
   /* USER CODE END StartDefaultTask */

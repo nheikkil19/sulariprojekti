@@ -28,10 +28,23 @@
 #include "esp.h"
 #include "usart.h"
 #include <string.h>
+#include "uds.h"
+#include "atomic.h"
+#include "motor.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+enum State {
+  IDLE,
+  STOP,
+  BUMP,
+  SLOPE,
+  LEFT,
+  RIGHT,
+  FORWARD,
+  BACKWARD
+} state = IDLE;
 
 /* USER CODE END PTD */
 
@@ -52,6 +65,7 @@ uint8_t rxbuffer[RXBUFFERSIZE];
 uint8_t mainbuffer[MAINBUFFERSIZE];
 uint16_t old_write_end, write_end, read_start;
 
+
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
 osThreadId_t defaultTaskHandle;
@@ -67,6 +81,13 @@ const osThreadAttr_t readEspUart_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for distanceSensor */
+osThreadId_t distanceSensorHandle;
+const osThreadAttr_t distanceSensor_attributes = {
+  .name = "distanceSensor",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -75,6 +96,7 @@ const osThreadAttr_t readEspUart_attributes = {
 
 void StartDefaultTask(void *argument);
 void StartReadEspUart(void *argument);
+void StartDistanceSensor(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -110,6 +132,9 @@ void MX_FREERTOS_Init(void) {
 
   /* creation of readEspUart */
   readEspUartHandle = osThreadNew(StartReadEspUart, NULL, &readEspUart_attributes);
+
+  /* creation of distanceSensor */
+  distanceSensorHandle = osThreadNew(StartDistanceSensor, NULL, &distanceSensor_attributes);
 
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
@@ -150,7 +175,37 @@ void StartDefaultTask(void *argument)
   for(;;)
   {
     // printf("Task1\n");
+    printf("state=%d\n", state);
     osDelay(1000);
+    if (state == IDLE) {
+      // do nothing
+    }
+    else if (state == STOP) {
+      motor_stop();
+      // brake
+      // wait 500ms
+      // state = idle
+    }
+    else if (state == BUMP) {
+      // send message
+      // state = prev_state
+    }
+    else if (state == SLOPE) {
+      // send message
+      // state = prev_state
+    }
+    else if (state == FORWARD) {
+      drive_forwards(.25);
+    }
+    else if (state == BACKWARD) {
+      drive_backwards(.25);
+    }
+    else if (state == LEFT) {
+      drive_left(.25);
+    }
+    else if (state == RIGHT) {
+      drive_right(.25);
+    }
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -181,6 +236,31 @@ void StartReadEspUart(void *argument)
   /* USER CODE END StartReadEspUart */
 }
 
+/* USER CODE BEGIN Header_StartDistanceSensor */
+/**
+* @brief Function implementing the distanceSensor thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartDistanceSensor */
+void StartDistanceSensor(void *argument)
+{
+  /* USER CODE BEGIN StartDistanceSensor */
+  float dist;
+  /* Infinite loop */
+  for(;;)
+  {
+    get_distance(&dist);
+    printf("dist=%d\n", (int) dist);
+    if (dist < 10) {
+      printf("WALL\n");
+      Atomic_CompareAndSwap_u32(&state, STOP, state);
+    }
+    osDelay(500);
+  }
+  /* USER CODE END StartDistanceSensor */
+}
+
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
@@ -199,8 +279,23 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
       write_end = size + old_write_end;
     }
     // Find some string from rxbuffer
-    if (strstr((char*)rxbuffer, "ERROR")) {
-      printf("Error found\n");
+    if (strstr((char*)rxbuffer, "stop")) {
+      Atomic_CompareAndSwap_u32(&state, STOP, state);
+    }
+    else if (strstr((char*)rxbuffer, "idle")) {
+      Atomic_CompareAndSwap_u32(&state, IDLE, state);
+    }
+    else if (strstr((char*)rxbuffer, "forward")) {
+      Atomic_CompareAndSwap_u32(&state, FORWARD, state);
+    }
+    else if (strstr((char*)rxbuffer, "back")) {
+      Atomic_CompareAndSwap_u32(&state, BACKWARD, state);
+    }
+    else if (strstr((char*)rxbuffer, "left")) {
+      Atomic_CompareAndSwap_u32(&state, LEFT, state);
+    }
+    else if (strstr((char*)rxbuffer, "right")) {
+      Atomic_CompareAndSwap_u32(&state, RIGHT, state);
     }
     HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rxbuffer, RXBUFFERSIZE);
   }

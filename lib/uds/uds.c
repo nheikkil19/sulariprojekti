@@ -7,6 +7,7 @@ uint8_t get_distance(float *value) {
     HAL_GPIO_WritePin(UDS_TRIG_GPIO_Port, UDS_TRIG_Pin, 1);
     HAL_Delay(1);
     HAL_GPIO_WritePin(UDS_TRIG_GPIO_Port, UDS_TRIG_Pin, 0);
+    TIM11->CNT = 0;
     HAL_TIM_Base_Start(&htim11);
     startTick = TIM11->CNT;
     stopTick = TIM11->CNT;

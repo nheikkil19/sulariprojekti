@@ -50,8 +50,8 @@ enum State {
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define RXBUFFERSIZE 512
-#define MAINBUFFERSIZE 1024
+#define RXBUFFERSIZE 128
+#define MAINBUFFERSIZE 256
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -64,7 +64,6 @@ enum State {
 uint8_t rxbuffer[RXBUFFERSIZE];
 uint8_t mainbuffer[MAINBUFFERSIZE];
 uint16_t old_write_end, write_end, read_start;
-
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -157,33 +156,18 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rxbuffer, RXBUFFERSIZE);
-
-  send_message("AT+CWINIT=1\r\n");
-  osDelay(2000);
-  send_message("AT+CWMODE=2\r\n");
-  osDelay(2000);
-  send_message("AT+CIPMUX=1\r\n");
-  osDelay(2000);
-  send_message("AT+CWSAP=\"esp32\",\"password\",1,0,3,0\r\n");
-  osDelay(2000);
-  send_message("AT+CWDHCP=1,1\r\n");
-  osDelay(2000);
-  send_message("AT+CIPSERVER=1\r\n");
-  osDelay(2000);
+  reset_esp();
+  open_socket();
+  enable_wifi();
 
   /* Infinite loop */
   for(;;)
   {
-    // printf("Task1\n");
-    printf("state=%d\n", state);
-    osDelay(1000);
     if (state == IDLE) {
       // do nothing
     }
     else if (state == STOP) {
       motor_stop();
-      // brake
-      // wait 500ms
       // state = idle
     }
     else if (state == BUMP) {
@@ -206,6 +190,7 @@ void StartDefaultTask(void *argument)
     else if (state == RIGHT) {
       drive_right(.25);
     }
+    osDelay(1000);
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -251,10 +236,8 @@ void StartDistanceSensor(void *argument)
   for(;;)
   {
     get_distance(&dist);
-    printf("dist=%d\n", (int) dist);
     if (dist < 10) {
-      printf("WALL\n");
-      Atomic_CompareAndSwap_u32(&state, STOP, state);
+      Atomic_CompareAndSwap_u32((uint32_t*)&state, STOP, state);
     }
     osDelay(500);
   }
@@ -280,22 +263,22 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
     }
     // Find some string from rxbuffer
     if (strstr((char*)rxbuffer, "stop")) {
-      Atomic_CompareAndSwap_u32(&state, STOP, state);
+      Atomic_CompareAndSwap_u32((uint32_t*)&state, STOP, state);
     }
     else if (strstr((char*)rxbuffer, "idle")) {
-      Atomic_CompareAndSwap_u32(&state, IDLE, state);
+      Atomic_CompareAndSwap_u32((uint32_t*)&state, IDLE, state);
     }
     else if (strstr((char*)rxbuffer, "forward")) {
-      Atomic_CompareAndSwap_u32(&state, FORWARD, state);
+      Atomic_CompareAndSwap_u32((uint32_t*)&state, FORWARD, state);
     }
     else if (strstr((char*)rxbuffer, "back")) {
-      Atomic_CompareAndSwap_u32(&state, BACKWARD, state);
+      Atomic_CompareAndSwap_u32((uint32_t*)&state, BACKWARD, state);
     }
     else if (strstr((char*)rxbuffer, "left")) {
-      Atomic_CompareAndSwap_u32(&state, LEFT, state);
+      Atomic_CompareAndSwap_u32((uint32_t*)&state, LEFT, state);
     }
     else if (strstr((char*)rxbuffer, "right")) {
-      Atomic_CompareAndSwap_u32(&state, RIGHT, state);
+      Atomic_CompareAndSwap_u32((uint32_t*)&state, RIGHT, state);
     }
     HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rxbuffer, RXBUFFERSIZE);
   }

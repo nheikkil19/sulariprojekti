@@ -1,11 +1,10 @@
 from pynput.keyboard import Key, Listener
 import socket
-from time import sleep
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.connect(("192.168.4.1", 333))
 
- 
+
 def on_press(key):
     if key == Key.up:
         print("UP")
@@ -20,8 +19,8 @@ def on_press(key):
     elif key == Key.esc:
         sock.close()
         exit()
- 
- 
+
+
 def on_release(key):
     if key == Key.up:
         print("UP release")
@@ -38,14 +37,10 @@ def on_release(key):
     elif key == Key.space:
         print("SPACE release")
         sock.sendall("stop".encode('utf-8'))
- 
 
 
-      
 # Collect events until released
 with Listener(
         on_press=on_press,
         on_release=on_release) as listener:
     listener.join()
-
-

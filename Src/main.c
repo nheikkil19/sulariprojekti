@@ -28,11 +28,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
-#include <string.h>
-#include "motor.h"
-#include "imu.h"
-#include "uds.h"
-#include "esp.h"
 
 /* USER CODE END Includes */
 

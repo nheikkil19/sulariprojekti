@@ -1,6 +1,7 @@
 #include "usart.h"
 #include "esp.h"
 #include "string.h"
+#include "cmsis_os2.h"
 
 uint8_t send_message(char *msg) {
     uint8_t err;
@@ -24,4 +25,35 @@ uint8_t read_message(uint8_t *msg, uint16_t len) {
     }
     printf("< %s\n", msg);
     return err;
+}
+
+uint8_t enable_wifi() {
+    // Init wifi driver
+    send_message("AT+CWINIT=1\r\n");
+    osDelay(1000);
+    // Select softAP mode
+    send_message("AT+CWMODE=2\r\n");
+    osDelay(1000);
+    // Set AP name, password, channel, no encryption, max connections, not hidden
+    send_message("AT+CWSAP=\"esp32\",\"password\",1,0,3,0\r\n");
+    osDelay(1000);
+    // Use DHCP
+    send_message("AT+CWDHCP=1,1\r\n");
+    osDelay(1000);
+    return 0;
+}
+
+uint8_t open_socket() {
+    // Enable multiple connections
+    send_message("AT+CIPMUX=1\r\n");
+    osDelay(1000);
+    // Start TCP server with default port (333)
+    send_message("AT+CIPSERVER=1\r\n");
+    osDelay(1000);
+    return 0;
+}
+
+uint8_t reset_esp() {
+    send_message("AT+RST\r\n");
+    osDelay(2000);
 }

@@ -28,6 +28,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include "imu.h"
+#include "esp.h"
 
 /* USER CODE END Includes */
 
@@ -100,6 +102,8 @@ int main(void)
   MX_TIM11_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+  softreset();
+  normalmodes();
   HAL_Delay(5000);
   printf("Init done\n");
   /* USER CODE END 2 */

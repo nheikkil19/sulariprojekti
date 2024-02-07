@@ -31,6 +31,7 @@
 #include "uds.h"
 #include "atomic.h"
 #include "motor.h"
+#include "imu.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -87,6 +88,13 @@ const osThreadAttr_t distanceSensor_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
+/* Definitions for sendAccData */
+osThreadId_t sendAccDataHandle;
+const osThreadAttr_t sendAccData_attributes = {
+  .name = "sendAccData",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityLow,
+};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -96,6 +104,7 @@ const osThreadAttr_t distanceSensor_attributes = {
 void StartDefaultTask(void *argument);
 void StartReadEspUart(void *argument);
 void StartDistanceSensor(void *argument);
+void StartSendAccData(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -135,6 +144,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of distanceSensor */
   distanceSensorHandle = osThreadNew(StartDistanceSensor, NULL, &distanceSensor_attributes);
 
+  /* creation of sendAccData */
+  // sendAccDataHandle = osThreadNew(StartSendAccData, NULL, &sendAccData_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -156,10 +168,12 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rxbuffer, RXBUFFERSIZE);
+  int16_t acc_x, acc_y, acc_z;
+  char acc_msg[64];
+  
   reset_esp();
   open_socket();
   enable_wifi();
-
   /* Infinite loop */
   for(;;)
   {
@@ -179,18 +193,23 @@ void StartDefaultTask(void *argument)
       // state = prev_state
     }
     else if (state == FORWARD) {
-      drive_forwards(.25);
+      drive_forwards(.5);
     }
     else if (state == BACKWARD) {
-      drive_backwards(.25);
+      drive_backwards(.5);
     }
     else if (state == LEFT) {
-      drive_left(.25);
+      drive_left(.35);
     }
     else if (state == RIGHT) {
-      drive_right(.25);
+      drive_right(.35);
     }
-    osDelay(1000);
+    read_acc_x(&acc_x);
+    read_acc_y(&acc_y);
+    read_acc_z(&acc_z);
+    sprintf(acc_msg, "%d,%d,%d\r\n", acc_x, acc_y, acc_z);
+    send_tcp_message(acc_msg);
+    osDelay(100);
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -236,12 +255,30 @@ void StartDistanceSensor(void *argument)
   for(;;)
   {
     get_distance(&dist);
-    if (dist < 10) {
+    if (dist < 20) {
       Atomic_CompareAndSwap_u32((uint32_t*)&state, STOP, state);
     }
-    osDelay(500);
+    osDelay(200);
   }
   /* USER CODE END StartDistanceSensor */
+}
+
+/* USER CODE BEGIN Header_StartSendAccData */
+/**
+* @brief Function implementing the sendAccData thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartSendAccData */
+void StartSendAccData(void *argument)
+{
+  /* USER CODE BEGIN StartSendAccData */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartSendAccData */
 }
 
 /* Private application code --------------------------------------------------*/

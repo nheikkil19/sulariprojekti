@@ -102,9 +102,12 @@ int main(void)
   MX_TIM11_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
+  HAL_Delay(5000);
   softreset();
   normalmodes();
-  HAL_Delay(5000);
+  configure_int();
+  configure_bump_int();
+  configure_slope_int();
   printf("Init done\n");
   /* USER CODE END 2 */
 
@@ -178,11 +181,26 @@ int _write(int fd, char* ptr, int len) {
   HAL_UART_Transmit(&huart2, (uint8_t *) ptr, len, HAL_MAX_DELAY);
   return len;
 }
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  if(GPIO_Pin == INT_ACC_Pin) {
+    // send_tcp_message("interrupt\r\n");
+    printf("Bump\n");
+  }
+  else if (GPIO_Pin == INT_GYR_Pin) {
+    printf("Slope\n");
+  }
+  else {
+      __NOP();
+  }
+}
+
 /* USER CODE END 4 */
 
 /**
   * @brief  Period elapsed callback in non blocking mode
-  * @note   This function is called  when TIM2 interrupt took place, inside
+  * @note   This function is called  when TIM1 interrupt took place, inside
   * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
   * a global variable "uwTick" used as application time base.
   * @param  htim : TIM handle
@@ -193,7 +211,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE BEGIN Callback 0 */
 
   /* USER CODE END Callback 0 */
-  if (htim->Instance == TIM2) {
+  if (htim->Instance == TIM1) {
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */

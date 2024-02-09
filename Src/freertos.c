@@ -170,7 +170,7 @@ void StartDefaultTask(void *argument)
   HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rxbuffer, RXBUFFERSIZE);
   int16_t acc_x, acc_y, acc_z;
   char acc_msg[64];
-  
+
   reset_esp();
   open_socket();
   enable_wifi();
@@ -204,11 +204,11 @@ void StartDefaultTask(void *argument)
     else if (state == RIGHT) {
       drive_right(.35);
     }
-    read_acc_x(&acc_x);
-    read_acc_y(&acc_y);
-    read_acc_z(&acc_z);
-    sprintf(acc_msg, "%d,%d,%d\r\n", acc_x, acc_y, acc_z);
-    send_tcp_message(acc_msg);
+    // read_acc_x(&acc_x);
+    // read_acc_y(&acc_y);
+    // read_acc_z(&acc_z);
+    // sprintf(acc_msg, "%d,%d,%d\r\n", acc_x, acc_y, acc_z);
+    // send_tcp_message(acc_msg);
     osDelay(100);
   }
   /* USER CODE END StartDefaultTask */

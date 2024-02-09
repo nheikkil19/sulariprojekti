@@ -62,6 +62,7 @@ enum State {
 uint8_t rxbuffer[RXBUFFERSIZE];
 uint8_t mainbuffer[MAINBUFFERSIZE];
 uint16_t old_write_end, write_end, read_start;
+uint8_t speed = 50;
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -167,16 +168,16 @@ void StartDefaultTask(void *argument)
       motor_stop();
     }
     else if (state == FORWARD) {
-      drive_forwards(.5);
+      drive_forwards(speed);
     }
     else if (state == BACKWARD) {
-      drive_backwards(.5);
+      drive_backwards(speed);
     }
     else if (state == LEFT) {
-      drive_left(.35);
+      drive_left(40);
     }
     else if (state == RIGHT) {
-      drive_right(.35);
+      drive_right(40);
     }
     // read_acc_x(&acc_x);
     // read_acc_y(&acc_y);
@@ -269,6 +270,16 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
     }
     else if (strstr((char*)rxbuffer, "right")) {
       Atomic_CompareAndSwap_u32((uint32_t*)&state, RIGHT, state);
+    }
+    else if (strstr((char*)rxbuffer, "faster")) {
+      if (speed <= 90) {
+        Atomic_Add_u32((uint32_t*)&speed, 10);
+      }
+    }
+    else if (strstr((char*)rxbuffer, "slower")) {
+      if (speed >= 20) {
+        Atomic_Subtract_u32((uint32_t*)&speed, 10);
+      }
     }
     HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rxbuffer, RXBUFFERSIZE);
   }

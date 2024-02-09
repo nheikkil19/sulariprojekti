@@ -37,15 +37,12 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 enum State {
-  IDLE,
   STOP,
-  BUMP,
-  SLOPE,
   LEFT,
   RIGHT,
   FORWARD,
   BACKWARD
-} state = IDLE;
+} state = STOP;
 
 /* USER CODE END PTD */
 
@@ -88,13 +85,6 @@ const osThreadAttr_t distanceSensor_attributes = {
   .stack_size = 128 * 4,
   .priority = (osPriority_t) osPriorityLow,
 };
-/* Definitions for sendAccData */
-osThreadId_t sendAccDataHandle;
-const osThreadAttr_t sendAccData_attributes = {
-  .name = "sendAccData",
-  .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
-};
 
 /* Private function prototypes -----------------------------------------------*/
 /* USER CODE BEGIN FunctionPrototypes */
@@ -104,7 +94,6 @@ const osThreadAttr_t sendAccData_attributes = {
 void StartDefaultTask(void *argument);
 void StartReadEspUart(void *argument);
 void StartDistanceSensor(void *argument);
-void StartSendAccData(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -144,9 +133,6 @@ void MX_FREERTOS_Init(void) {
   /* creation of distanceSensor */
   distanceSensorHandle = osThreadNew(StartDistanceSensor, NULL, &distanceSensor_attributes);
 
-  /* creation of sendAccData */
-  // sendAccDataHandle = osThreadNew(StartSendAccData, NULL, &sendAccData_attributes);
-
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -177,20 +163,8 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    if (state == IDLE) {
-      // do nothing
-    }
-    else if (state == STOP) {
+    if (state == STOP) {
       motor_stop();
-      // state = idle
-    }
-    else if (state == BUMP) {
-      // send message
-      // state = prev_state
-    }
-    else if (state == SLOPE) {
-      // send message
-      // state = prev_state
     }
     else if (state == FORWARD) {
       drive_forwards(.5);
@@ -263,24 +237,6 @@ void StartDistanceSensor(void *argument)
   /* USER CODE END StartDistanceSensor */
 }
 
-/* USER CODE BEGIN Header_StartSendAccData */
-/**
-* @brief Function implementing the sendAccData thread.
-* @param argument: Not used
-* @retval None
-*/
-/* USER CODE END Header_StartSendAccData */
-void StartSendAccData(void *argument)
-{
-  /* USER CODE BEGIN StartSendAccData */
-  /* Infinite loop */
-  for(;;)
-  {
-    osDelay(1);
-  }
-  /* USER CODE END StartSendAccData */
-}
-
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
@@ -301,9 +257,6 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
     // Find some string from rxbuffer
     if (strstr((char*)rxbuffer, "stop")) {
       Atomic_CompareAndSwap_u32((uint32_t*)&state, STOP, state);
-    }
-    else if (strstr((char*)rxbuffer, "idle")) {
-      Atomic_CompareAndSwap_u32((uint32_t*)&state, IDLE, state);
     }
     else if (strstr((char*)rxbuffer, "forward")) {
       Atomic_CompareAndSwap_u32((uint32_t*)&state, FORWARD, state);

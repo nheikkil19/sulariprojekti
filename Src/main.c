@@ -105,9 +105,14 @@ int main(void)
   HAL_Delay(5000);
   softreset();
   normalmodes();
-  configure_int();
-  configure_bump_int();
-  configure_slope_int();
+  configure_interrupts();
+  configure_bump_interrupt();
+  configure_slope_interrupt();
+  print_register(REG_INT_LATCH);
+  print_register(REG_INT_CTRL);
+  print_register(REG_INT_MAP_0);
+  print_register(REG_INT_MAP_1);
+  print_register(REG_INT_MAP_2);
   printf("Init done\n");
   /* USER CODE END 2 */
 

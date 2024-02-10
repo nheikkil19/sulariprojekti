@@ -155,8 +155,8 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rxbuffer, RXBUFFERSIZE);
-  int16_t acc_x, acc_y, acc_z;
-  char acc_msg[64];
+  // int16_t acc_x, acc_y, acc_z;
+  // char acc_msg[64];
 
   reset_esp();
   open_socket();

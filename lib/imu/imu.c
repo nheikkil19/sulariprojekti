@@ -64,15 +64,35 @@ uint8_t read_acc_z(int16_t *value) {
 uint8_t configure_bump_interrupt() {
     uint8_t err;
     uint8_t prev_value;
+    // Read previous value from interrupt enable register
     err = read_register(REG_INT_EN_1, &prev_value);
     if (err) {
         printf("Bump interrupt init error 1: %d\n", err);
         return 1;
     }
+    // Write new value with high G interrupt enabled
     err = write_register(REG_INT_EN_1, INT_HIGH_G_EN_Z | prev_value);
     if (err) {
         printf("Bump interrupt init error 2: %d\n", err);
         return 2;
+    }
+    // Read previous value from interrupt map register
+    err = read_register(REG_INT_MAP_2, &prev_value);
+    if (err) {
+        printf("Slope interrupt enable error 3: %d\n", err);
+        return 1;
+    }
+    // High G (bump) detection to INT 2
+    err = write_register(REG_INT_MAP_2, (0x01 << 1) | prev_value);
+    if (err) {
+        printf("Interrupt 2 map error: %d\n", err);
+        return 4;
+    }
+    // Threshold
+    err = write_register(REG_INT_LOWHIGH_4, 150);
+    if (err) {
+        printf("Slope interrupt enable error 5: %d\n", err);
+        return 4;
     }
     return 0;
 }
@@ -80,24 +100,78 @@ uint8_t configure_bump_interrupt() {
 uint8_t configure_slope_interrupt() {
     uint8_t err;
     uint8_t prev_value;
+    // Read previous value from interrupt enable register
     err = read_register(REG_INT_EN_0, &prev_value);
     if (err) {
-        printf("Slope interrupt init error 1: %d\n", err);
+        printf("Slope interrupt enable error 1: %d\n", err);
         return 1;
     }
+    // Write new value with flat interrupt enabled
     err = write_register(REG_INT_EN_0, INT_FLAT | prev_value);
     if (err) {
-        printf("Slope interrupt init error 2: %d\n", err);
+        printf("Slope interrupt enable error 2: %d\n", err);
         return 2;
+    }
+    // Read previous value from interrupt map register
+    err = read_register(REG_INT_MAP_2, &prev_value);
+    if (err) {
+        printf("Slope interrupt enable error 3: %d\n", err);
+        return 2;
+    }
+    // Flat (slope) detection to INT 2
+    err = write_register(REG_INT_MAP_2, (0x01 << 7) | prev_value);
+    if (err) {
+        printf("Slope interrupt enable error 4: %d\n", err);
+        return 4;
+    }
+    // Angle
+    err = write_register(REG_INT_FLAT_0, 0x02);
+    if (err) {
+        printf("Slope interrupt enable error 5: %d\n", err);
+        return 5;
+    }
+    // Hold time and hysteresis
+    // err = write_register(REG_INT_FLAT_1, 0x02);
+    // if (err) {
+    //     printf("Slope interrupt enable error 6: %d\n", err);
+    //     return 6;
+    // }
+    return 0;
+}
+
+uint8_t configure_data_ready_interrupt() {
+    uint8_t err;
+    uint8_t prev_value;
+    // Read previous value from interrupt enable register
+    err = read_register(REG_INT_EN_1, &prev_value);
+    if (err) {
+        printf("Data ready interrupt enable error 1: %d\n", err);
+        return 1;
+    }
+    // Write new value with data ready interrupt enabled
+    err = write_register(REG_INT_EN_1, INT_DATA_READY | prev_value);
+    if (err) {
+        printf("Data ready interrupt enable error 2: %d\n", err);
+        return 2;
+    }
+    // Read previous value from interrupt map register
+    err = read_register(REG_INT_MAP_1, &prev_value);
+    if (err) {
+        printf("Data ready interrupt enable error 3: %d\n", err);
+        return 1;
+    }
+    // Data ready detection to INT 1
+    err = write_register(REG_INT_MAP_1, (0x01 << 7) | prev_value);
+    if (err) {
+        printf("Data ready interrupt enable error 4: %d\n", err);
+        return 3;
     }
     return 0;
 }
 
-uint8_t configure_interrupts() {
+uint8_t configure_interrupt_pins() {
     uint8_t err;
-    uint8_t tx_buffer[] = {REG_INT_CTRL, 0xBB}; // int_ctrl , 1011 1011 (int enabled, push-pull, active high, edge)
-    err = write_register(REG_INT_CTRL, 0xBB);
-    err = HAL_I2C_Master_Transmit(&hi2c3, IMU_ADDR << 1, tx_buffer, 2, 1000);
+    err = write_register(REG_INT_CTRL, 0xBB); // 1011 (int enabled, push-pull, active high, edge) for both pins
     if (err) {
         printf("Interrupt ctrl error: %d\n", err);
         return 1;
@@ -106,16 +180,6 @@ uint8_t configure_interrupts() {
     if (err) {
         printf("Interrupt latch error: %d\n", err);
         return 2;
-    }
-    err = write_register(REG_INT_MAP_0, 0x80); // Flat (slope) detection to INT 1
-    if (err) {
-        printf("Interrupt 1 map error: %d\n", err);
-        return 3;
-    }
-    err = write_register(REG_INT_EN_0, INT_FLAT); // High G (bump) detection to INT 2
-    if (err) {
-        printf("Interrupt 2 map error: %d\n", err);
-        return 4;
     }
     return 0;
 }

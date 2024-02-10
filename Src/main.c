@@ -105,11 +105,15 @@ int main(void)
   HAL_Delay(5000);
   softreset();
   normalmodes();
-  configure_interrupts();
+  configure_interrupt_pins();
   configure_bump_interrupt();
   configure_slope_interrupt();
-  print_register(REG_INT_LATCH);
+  configure_data_ready_interrupt();
+  print_register(REG_INT_EN_0);
+  print_register(REG_INT_EN_1);
+  print_register(REG_INT_EN_2);
   print_register(REG_INT_CTRL);
+  print_register(REG_INT_LATCH);
   print_register(REG_INT_MAP_0);
   print_register(REG_INT_MAP_1);
   print_register(REG_INT_MAP_2);
@@ -189,12 +193,35 @@ int _write(int fd, char* ptr, int len) {
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
+  uint8_t value;
+  // static uint8_t count = 0;
+  // int16_t acc_x, acc_y, acc_z;
   if(GPIO_Pin == INT_ACC_Pin) {
-    // send_tcp_message("interrupt\r\n");
-    printf("Bump\n");
+    // Check flat interrupt
+    read_register(REG_INT_STATUS_0, &value);
+    if (value & (0x01 << 7)) {
+      // Check non flat event
+      read_register(REG_INT_STATUS_3, &value);
+      if ((value & (0x01 << 7)) == 0) {
+        printf("Slope\n");
+        // send_tcp_message("slope\r\n");
+      }
+    }
+    // Check high G interrupt
+    read_register(REG_INT_STATUS_1, &value);
+    if (value & (0x01 << 2)) {
+      printf("Bump\n");
+    }
   }
   else if (GPIO_Pin == INT_GYR_Pin) {
-    printf("Slope\n");
+    // if (count == 0) {
+      // printf("Gyropin\n");
+    // }
+    // count++;
+    // read_acc_x(&acc_x);
+    // read_acc_y(&acc_y);
+    // read_acc_z(&acc_z);
+    // printf("%d,%d,%d\n", acc_x, acc_y, acc_z);
   }
   else {
       __NOP();

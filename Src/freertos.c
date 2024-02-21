@@ -203,11 +203,11 @@ void StartReadEspUart(void *argument)
   for(;;)
   {
     if (write_end != read_start) {
-      printf("< ");
-      // Read from mainbuffer
-      for (; read_start!=write_end; read_start=(read_start+1) % MAINBUFFERSIZE) {
-        putchar(mainbuffer[read_start]);
-      }
+    printf("< ");
+    // Read from mainbuffer
+    for (; read_start!=write_end; read_start=(read_start+1) % MAINBUFFERSIZE) {
+    putchar(mainbuffer[read_start]);
+    }
       putchar('\n');
     }
     osDelay(100);
@@ -258,18 +258,23 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
     // Find some string from rxbuffer
     if (strstr((char*)rxbuffer, "stop")) {
       Atomic_CompareAndSwap_u32((uint32_t*)&state, STOP, state);
+      // state = STOP;
     }
     else if (strstr((char*)rxbuffer, "forward")) {
       Atomic_CompareAndSwap_u32((uint32_t*)&state, FORWARD, state);
+      // state = FORWARD;
     }
     else if (strstr((char*)rxbuffer, "back")) {
       Atomic_CompareAndSwap_u32((uint32_t*)&state, BACKWARD, state);
+      // state = BACKWARD;
     }
     else if (strstr((char*)rxbuffer, "left")) {
       Atomic_CompareAndSwap_u32((uint32_t*)&state, LEFT, state);
+      // state = LEFT;
     }
     else if (strstr((char*)rxbuffer, "right")) {
       Atomic_CompareAndSwap_u32((uint32_t*)&state, RIGHT, state);
+      // state = RIGHT;
     }
     else if (strstr((char*)rxbuffer, "faster")) {
       if (speed <= 90) {

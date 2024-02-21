@@ -89,9 +89,15 @@ uint8_t configure_bump_interrupt() {
         return 4;
     }
     // Threshold
-    err = write_register(REG_INT_LOWHIGH_4, 150);
+    err = write_register(REG_INT_LOWHIGH_4, 158);
     if (err) {
         printf("Slope interrupt enable error 5: %d\n", err);
+        return 4;
+    }
+    // Duration
+    err = write_register(REG_INT_LOWHIGH_3, 19);
+    if (err) {
+        printf("Slope interrupt enable error 6: %d\n", err);
         return 4;
     }
     return 0;
@@ -125,13 +131,13 @@ uint8_t configure_slope_interrupt() {
         return 4;
     }
     // Angle
-    err = write_register(REG_INT_FLAT_0, 0x02);
+    err = write_register(REG_INT_FLAT_0, 1);
     if (err) {
         printf("Slope interrupt enable error 5: %d\n", err);
         return 5;
     }
-    // Hold time and hysteresis
-    // err = write_register(REG_INT_FLAT_1, 0x02);
+    // // Hold time and hysteresis
+    // err = write_register(REG_INT_FLAT_1, 0x21); // (3 < 4) | 
     // if (err) {
     //     printf("Slope interrupt enable error 6: %d\n", err);
     //     return 6;

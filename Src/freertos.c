@@ -31,20 +31,18 @@
 #include "uds.h"
 #include "atomic.h"
 #include "motor.h"
+#include "imu.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 enum State {
-  IDLE,
   STOP,
-  BUMP,
-  SLOPE,
   LEFT,
   RIGHT,
   FORWARD,
   BACKWARD
-} state = IDLE;
+} state = STOP;
 
 /* USER CODE END PTD */
 
@@ -64,6 +62,7 @@ enum State {
 uint8_t rxbuffer[RXBUFFERSIZE];
 uint8_t mainbuffer[MAINBUFFERSIZE];
 uint16_t old_write_end, write_end, read_start;
+uint8_t speed = 50;
 
 /* USER CODE END Variables */
 /* Definitions for defaultTask */
@@ -156,41 +155,29 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rxbuffer, RXBUFFERSIZE);
+
   reset_esp();
   open_socket();
   enable_wifi();
-
   /* Infinite loop */
   for(;;)
   {
-    if (state == IDLE) {
-      // do nothing
-    }
-    else if (state == STOP) {
+    if (state == STOP) {
       motor_stop();
-      // state = idle
-    }
-    else if (state == BUMP) {
-      // send message
-      // state = prev_state
-    }
-    else if (state == SLOPE) {
-      // send message
-      // state = prev_state
     }
     else if (state == FORWARD) {
-      drive_forwards(.25);
+      drive_forwards(speed);
     }
     else if (state == BACKWARD) {
-      drive_backwards(.25);
+      drive_backwards(speed);
     }
     else if (state == LEFT) {
-      drive_left(.25);
+      drive_left(40);
     }
     else if (state == RIGHT) {
-      drive_right(.25);
+      drive_right(40);
     }
-    osDelay(1000);
+    osDelay(100);
   }
   /* USER CODE END StartDefaultTask */
 }
@@ -209,11 +196,11 @@ void StartReadEspUart(void *argument)
   for(;;)
   {
     if (write_end != read_start) {
-      printf("< ");
-      // Read from mainbuffer
-      for (; read_start!=write_end; read_start=(read_start+1) % MAINBUFFERSIZE) {
-        putchar(mainbuffer[read_start]);
-      }
+    printf("< ");
+    // Read from mainbuffer
+    for (; read_start!=write_end; read_start=(read_start+1) % MAINBUFFERSIZE) {
+    putchar(mainbuffer[read_start]);
+    }
       putchar('\n');
     }
     osDelay(100);
@@ -236,10 +223,10 @@ void StartDistanceSensor(void *argument)
   for(;;)
   {
     get_distance(&dist);
-    if (dist < 10) {
+    if (dist < 20) {
       Atomic_CompareAndSwap_u32((uint32_t*)&state, STOP, state);
     }
-    osDelay(500);
+    osDelay(200);
   }
   /* USER CODE END StartDistanceSensor */
 }
@@ -265,9 +252,6 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
     if (strstr((char*)rxbuffer, "stop")) {
       Atomic_CompareAndSwap_u32((uint32_t*)&state, STOP, state);
     }
-    else if (strstr((char*)rxbuffer, "idle")) {
-      Atomic_CompareAndSwap_u32((uint32_t*)&state, IDLE, state);
-    }
     else if (strstr((char*)rxbuffer, "forward")) {
       Atomic_CompareAndSwap_u32((uint32_t*)&state, FORWARD, state);
     }
@@ -279,6 +263,16 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
     }
     else if (strstr((char*)rxbuffer, "right")) {
       Atomic_CompareAndSwap_u32((uint32_t*)&state, RIGHT, state);
+    }
+    else if (strstr((char*)rxbuffer, "faster")) {
+      if (speed <= 90) {
+        Atomic_Add_u32((uint32_t*)&speed, 10);
+      }
+    }
+    else if (strstr((char*)rxbuffer, "slower")) {
+      if (speed >= 20) {
+        Atomic_Subtract_u32((uint32_t*)&speed, 10);
+      }
     }
     HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rxbuffer, RXBUFFERSIZE);
   }

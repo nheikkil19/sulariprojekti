@@ -28,6 +28,8 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
+#include "imu.h"
+#include "esp.h"
 
 /* USER CODE END Includes */
 
@@ -49,6 +51,7 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+int16_t acc_data[2000];
 
 /* USER CODE END PV */
 
@@ -101,6 +104,20 @@ int main(void)
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
   HAL_Delay(5000);
+  softreset();
+  normalmodes();
+  configure_interrupt_pins();
+  configure_bump_interrupt();
+  configure_slope_interrupt();
+  configure_data_ready_interrupt();
+  print_register(REG_INT_EN_0);
+  print_register(REG_INT_EN_1);
+  print_register(REG_INT_EN_2);
+  print_register(REG_INT_CTRL);
+  print_register(REG_INT_LATCH);
+  print_register(REG_INT_MAP_0);
+  print_register(REG_INT_MAP_1);
+  print_register(REG_INT_MAP_2);
   printf("Init done\n");
   /* USER CODE END 2 */
 
@@ -174,11 +191,54 @@ int _write(int fd, char* ptr, int len) {
   HAL_UART_Transmit(&huart2, (uint8_t *) ptr, len, HAL_MAX_DELAY);
   return len;
 }
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  uint8_t value;
+  int16_t acc_x, acc_y, acc_z;
+  uint16_t static count = 0;
+  if(GPIO_Pin == INT_ACC_Pin) {
+    // Check flat interrupt
+    read_register(REG_INT_STATUS_0, &value);
+    if (value & (0x01 << 7)) {
+      // Check non flat event
+      read_register(REG_INT_STATUS_3, &value);
+      if ((value & (0x01 << 7)) == 0) {
+        // printf("Slope\n");
+        send_tcp_message("slope\r\n");
+      }
+    }
+    // Check high G interrupt
+    read_register(REG_INT_STATUS_1, &value);
+    if (value & (0x01 << 2)) {
+      // printf("Bump\n");
+      send_tcp_message("bump\r\n");
+    }
+  }
+  else if (GPIO_Pin == INT_GYR_Pin && count < 2000) {
+    // read_acc_x(&acc_x);
+    // read_acc_y(&acc_y);
+    // read_acc_z(&acc_z);
+    // acc_data[count][0] = acc_x;
+    // acc_data[count][1] = acc_y;
+    // acc_data[count] = acc_z;
+    // count++;
+    // if (count == 2000) {
+    //   for (int16_t i = 0; i<2000; i++) {
+    //     printf("%d\n", acc_data[i]);
+    //   }
+    // }
+  }
+  else {
+      __NOP();
+  }
+}
+
 /* USER CODE END 4 */
 
 /**
   * @brief  Period elapsed callback in non blocking mode
-  * @note   This function is called  when TIM2 interrupt took place, inside
+  * @note   This function is called  when TIM1 interrupt took place, inside
   * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
   * a global variable "uwTick" used as application time base.
   * @param  htim : TIM handle
@@ -189,7 +249,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
   /* USER CODE BEGIN Callback 0 */
 
   /* USER CODE END Callback 0 */
-  if (htim->Instance == TIM2) {
+  if (htim->Instance == TIM1) {
     HAL_IncTick();
   }
   /* USER CODE BEGIN Callback 1 */

@@ -9,7 +9,7 @@ uint8_t send_message(char *msg) {
     if (err) {
         printf("UART1 TX ERR=%d\n", err);
     }
-    // printf("> %s\n", msg);
+    // printf("SENT: %s\n", msg);
     return err;
 }
 
@@ -56,4 +56,13 @@ uint8_t open_socket() {
 uint8_t reset_esp() {
     send_message("AT+RST\r\n");
     osDelay(2000);
+}
+
+uint8_t send_tcp_message(char * msg) {
+    uint16_t len = strlen(msg);
+    char cipsend[20];
+    sprintf(cipsend, "AT+CIPSEND=0,%d\r\n", len);
+    send_message(cipsend);
+    osDelay(50);
+    send_message(msg);
 }

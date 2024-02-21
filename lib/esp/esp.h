@@ -5,3 +5,4 @@ uint8_t read_message(uint8_t *msg, uint16_t len);
 uint8_t enable_wifi();
 uint8_t open_socket();
 uint8_t reset_esp();
+uint8_t send_tcp_message(char * msg);

@@ -195,8 +195,6 @@ int _write(int fd, char* ptr, int len) {
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   uint8_t value;
-  int16_t acc_x, acc_y, acc_z;
-  uint16_t static count = 0;
   if(GPIO_Pin == INT_ACC_Pin) {
     // Check flat interrupt
     read_register(REG_INT_STATUS_0, &value);
@@ -215,20 +213,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
       send_tcp_message("bump\r\n");
     }
   }
-  else if (GPIO_Pin == INT_GYR_Pin && count < 2000) {
-    // read_acc_x(&acc_x);
-    // read_acc_y(&acc_y);
-    // read_acc_z(&acc_z);
-    // acc_data[count][0] = acc_x;
-    // acc_data[count][1] = acc_y;
-    // acc_data[count] = acc_z;
-    // count++;
-    // if (count == 2000) {
-    //   for (int16_t i = 0; i<2000; i++) {
-    //     printf("%d\n", acc_data[i]);
-    //   }
-    // }
-  }
+  // else if (GPIO_Pin == INT_GYR_Pin) {}
   else {
       __NOP();
   }

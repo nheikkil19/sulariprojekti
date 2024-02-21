@@ -43,6 +43,8 @@
 #define INT_HIGH_G_EN_Z (0x01 << 2)
 #define INT_DATA_READY (0x01 << 4)
 
+int16_t acc_x, acc_y, acc_z;
+
 uint8_t softreset();
 uint8_t normalmodes();
 uint8_t read_acc_x(int16_t *value);

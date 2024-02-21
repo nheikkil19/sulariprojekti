@@ -154,11 +154,16 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
+  char msg[64];
   HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rxbuffer, RXBUFFERSIZE);
 
   reset_esp();
   open_socket();
   enable_wifi();
+  send_message("AT+RFPOWER=43\r\n");
+  osDelay(1000);
+  send_message("AT+RFPOWER?\r\n");
+  osDelay(1000);
   /* Infinite loop */
   for(;;)
   {
@@ -177,6 +182,11 @@ void StartDefaultTask(void *argument)
     else if (state == RIGHT) {
       drive_right(40);
     }
+    read_acc_x(&acc_x);
+    read_acc_y(&acc_y);
+    read_acc_z(&acc_z);
+    sprintf(msg, "%d,%d,%d\r\n", acc_x, acc_y, acc_z);
+    send_tcp_message(msg);
     osDelay(100);
   }
   /* USER CODE END StartDefaultTask */

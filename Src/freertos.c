@@ -155,8 +155,6 @@ void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
   HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rxbuffer, RXBUFFERSIZE);
-  // int16_t acc_x, acc_y, acc_z;
-  // char acc_msg[64];
 
   reset_esp();
   open_socket();
@@ -179,11 +177,6 @@ void StartDefaultTask(void *argument)
     else if (state == RIGHT) {
       drive_right(40);
     }
-    // read_acc_x(&acc_x);
-    // read_acc_y(&acc_y);
-    // read_acc_z(&acc_z);
-    // sprintf(acc_msg, "%d,%d,%d\r\n", acc_x, acc_y, acc_z);
-    // send_tcp_message(acc_msg);
     osDelay(100);
   }
   /* USER CODE END StartDefaultTask */
@@ -258,23 +251,18 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
     // Find some string from rxbuffer
     if (strstr((char*)rxbuffer, "stop")) {
       Atomic_CompareAndSwap_u32((uint32_t*)&state, STOP, state);
-      // state = STOP;
     }
     else if (strstr((char*)rxbuffer, "forward")) {
       Atomic_CompareAndSwap_u32((uint32_t*)&state, FORWARD, state);
-      // state = FORWARD;
     }
     else if (strstr((char*)rxbuffer, "back")) {
       Atomic_CompareAndSwap_u32((uint32_t*)&state, BACKWARD, state);
-      // state = BACKWARD;
     }
     else if (strstr((char*)rxbuffer, "left")) {
       Atomic_CompareAndSwap_u32((uint32_t*)&state, LEFT, state);
-      // state = LEFT;
     }
     else if (strstr((char*)rxbuffer, "right")) {
       Atomic_CompareAndSwap_u32((uint32_t*)&state, RIGHT, state);
-      // state = RIGHT;
     }
     else if (strstr((char*)rxbuffer, "faster")) {
       if (speed <= 90) {

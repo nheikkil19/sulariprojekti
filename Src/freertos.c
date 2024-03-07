@@ -32,6 +32,8 @@
 #include "atomic.h"
 #include "motor.h"
 #include "imu.h"
+#include <math.h>
+#include "madgwickFilterMag.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -167,9 +169,9 @@ void StartDefaultTask(void *argument)
   /* Infinite loop */
   for(;;)
   {
-    if (state == STOP) {
+        if (state == STOP) {
       motor_stop();
-    }
+          }
     else if (state == FORWARD) {
       drive_forwards(speed);
     }
@@ -182,11 +184,15 @@ void StartDefaultTask(void *argument)
     else if (state == RIGHT) {
       drive_right(40);
     }
-    read_acc_x(&acc_x);
-    read_acc_y(&acc_y);
-    read_acc_z(&acc_z);
-    sprintf(msg, "%d,%d,%d\r\n", acc_x, acc_y, acc_z);
-    send_tcp_message(msg);
+    // read_acc_x(&acc_x);
+    // read_acc_y(&acc_y);
+    // read_acc_z(&acc_z);
+    // printf("mag=%d,%d,%d\n", mag_x, mag_y, mag_z);
+    printf("%d,%d,%d,%d\n", (int)SEq_1*100, (int)SEq_2*100, (int)SEq_3*100, (int)SEq_4*100);
+    // printf("acc=%d,%d,%d gyro=%d,%d,%d orientation=%d,%d,%d\r\n", acc_x, acc_y, acc_z, gyro_x, gyro_y, gyro_z, (int)pitch, (int)roll, (int)yaw);
+    // printf("real_y=%d\n", (int)(acc_y - (2 * (SEq_1 * SEq_2 + SEq_3 * SEq_4) * 16384)));
+    // send_tcp_message(msg);
+    // printf("travel_dist=%ld (%ld cm)\n", travel_distance, (int32_t)(travel_distance / 16384 * 9.81 * 0.01 * 0.01 * 100 * 100));
     osDelay(100);
   }
   /* USER CODE END StartDefaultTask */

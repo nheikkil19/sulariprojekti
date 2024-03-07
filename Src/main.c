@@ -30,6 +30,8 @@
 #include <stdio.h>
 #include "imu.h"
 #include "esp.h"
+#include "madgwickFilter.h"
+#include "madgwickFilterMag.h"
 
 /* USER CODE END Includes */
 
@@ -106,18 +108,14 @@ int main(void)
   HAL_Delay(5000);
   softreset();
   normalmodes();
+  setup_mag();
   configure_interrupt_pins();
   configure_bump_interrupt();
   configure_slope_interrupt();
   configure_data_ready_interrupt();
-  print_register(REG_INT_EN_0);
-  print_register(REG_INT_EN_1);
-  print_register(REG_INT_EN_2);
-  print_register(REG_INT_CTRL);
-  print_register(REG_INT_LATCH);
-  print_register(REG_INT_MAP_0);
-  print_register(REG_INT_MAP_1);
-  print_register(REG_INT_MAP_2);
+  fast_offset_compensation();
+  travel_distance = 0;
+  print_register(0x03);
   printf("Init done\n");
   /* USER CODE END 2 */
 
@@ -213,7 +211,27 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
       send_tcp_message("bump\r\n");
     }
   }
-  // else if (GPIO_Pin == INT_GYR_Pin) {}
+  else if (GPIO_Pin == INT_GYR_Pin) {
+    read_acc_x(&acc_x);
+    read_acc_y(&acc_y);
+    read_acc_z(&acc_z);
+    read_gyro_x(&gyro_x);
+    read_gyro_y(&gyro_y);
+    read_gyro_z(&gyro_z);
+    read_mag_x(&mag_x);
+    read_mag_y(&mag_y);
+    read_mag_z(&mag_z);
+    filterUpdate(acc_x, acc_y, acc_z, gyro_x / 16.384 / 360 * 2 * 3.14159265358979, gyro_y / 16.384 / 360 * 2 * 3.14159265358979, gyro_z / 16.384 / 360 * 2 * 3.14159265358979, mag_x, mag_y, mag_z);
+    // q_est.q1 = SEq_1;
+    // q_est.q2 = SEq_2;
+    // q_est.q3 = SEq_3;
+    // q_est.q4 = SEq_4;
+    // eulerAngles(q_est, &roll, &pitch, &yaw);
+
+    // if (acc_y < -200 || 200 < acc_y) {
+    //   travel_distance += acc_y;
+    // }
+  }
   else {
       __NOP();
   }

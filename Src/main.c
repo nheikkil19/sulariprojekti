@@ -51,7 +51,6 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-int16_t acc_data[2000];
 
 /* USER CODE END PV */
 
@@ -103,7 +102,6 @@ int main(void)
   MX_TIM11_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_Delay(5000);
   softreset();
   normalmodes();
   configure_interrupt_pins();
@@ -111,14 +109,6 @@ int main(void)
   configure_slope_interrupt();
   configure_data_ready_interrupt();
   fast_offset_compensation();
-  print_register(REG_INT_EN_0);
-  print_register(REG_INT_EN_1);
-  print_register(REG_INT_EN_2);
-  print_register(REG_INT_CTRL);
-  print_register(REG_INT_LATCH);
-  print_register(REG_INT_MAP_0);
-  print_register(REG_INT_MAP_1);
-  print_register(REG_INT_MAP_2);
   printf("Init done\n");
   /* USER CODE END 2 */
 
@@ -203,14 +193,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
       // Check non flat event
       read_register(REG_INT_STATUS_3, &value);
       if ((value & (0x01 << 7)) == 0) {
-        // printf("Slope\n");
         send_tcp_message("slope\r\n");
       }
     }
     // Check high G interrupt
     read_register(REG_INT_STATUS_1, &value);
     if (value & (0x01 << 2)) {
-      // printf("Bump\n");
       send_tcp_message("bump\r\n");
     }
   }

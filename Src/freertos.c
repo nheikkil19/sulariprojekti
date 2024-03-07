@@ -160,10 +160,6 @@ void StartDefaultTask(void *argument)
   reset_esp();
   open_socket();
   enable_wifi();
-  send_message("AT+RFPOWER=43\r\n");
-  osDelay(1000);
-  send_message("AT+RFPOWER?\r\n");
-  osDelay(1000);
   /* Infinite loop */
   for(;;)
   {

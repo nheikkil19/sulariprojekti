@@ -71,10 +71,6 @@
 #define INT_DATA_READY (0x01 << 4)
 
 int16_t acc_x, acc_y, acc_z;
-int16_t gyro_x, gyro_y, gyro_z;
-int16_t mag_x, mag_y, mag_z;
-float roll, pitch, yaw;
-int32_t travel_distance;
 
 uint8_t softreset();
 uint8_t normalmodes();

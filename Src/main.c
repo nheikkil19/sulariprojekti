@@ -110,6 +110,7 @@ int main(void)
   configure_bump_interrupt();
   configure_slope_interrupt();
   configure_data_ready_interrupt();
+  fast_offset_compensation();
   print_register(REG_INT_EN_0);
   print_register(REG_INT_EN_1);
   print_register(REG_INT_EN_2);

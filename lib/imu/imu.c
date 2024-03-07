@@ -35,6 +35,97 @@ uint8_t normalmodes() {
     return 0;
 }
 
+uint8_t setup_mag() {
+    uint8_t err;
+    err = write_register(REG_MAG_IF_0, 0x80);
+    if (err) {
+        printf("Mag setup error 1: %d\n", err);
+        return 1;
+    }
+    err = write_register(REG_MAG_IF_3, 0x01);
+    if (err) {
+        printf("Mag setup error 2: %d\n", err);
+        return 2;
+    }
+    err = write_register(REG_MAG_IF_2, 0x4B);
+    if (err) {
+        printf("Mag setup error 3: %d\n", err);
+        return 3;
+    }
+    err = write_register(REG_MAG_IF_3, 0x01);
+    if (err) {
+        printf("Mag setup error 4: %d\n", err);
+        return 4;
+    }
+    err = write_register(REG_MAG_IF_2, 0x04);
+    if (err) {
+        printf("Mag setup error 5: %d\n", err);
+        return 5;
+    }
+    err = write_register(REG_MAG_IF_3, 0x0E);
+    if (err) {
+        printf("Mag setup error 6: %d\n", err);
+        return 6;
+    }
+    err = write_register(REG_MAG_IF_2, 0x0E);
+    if (err) {
+        printf("Mag setup error 7: %d\n", err);
+        return 7;
+    }
+    err = write_register(REG_MAG_IF_3, 0x02);
+    if (err) {
+        printf("Mag setup error 8: %d\n", err);
+        return 8;
+    }
+    err = write_register(REG_MAG_IF_2, 0x4C);
+    if (err) {
+        printf("Mag setup error 9: %d\n", err);
+        return 9;
+    }
+    err = write_register(REG_MAG_IF_1, 0x42);
+    if (err) {
+        printf("Mag setup error 10: %d\n", err);
+        return 10;
+    }
+    err = write_register(REG_MAG_CONF, 0x08);
+    if (err) {
+        printf("Mag setup error 11: %d\n", err);
+        return 11;
+    }
+    err = write_register(REG_MAG_IF_0, 0x00);
+    if (err) {
+        printf("Mag setup error 12: %d\n", err);
+        return 12;
+    }
+    err = write_register(REG_CMD, 0x1A);
+    if (err) {
+        printf("Mag setup error 13: %d\n", err);
+        return 13;
+    }
+    return 0;
+}
+
+uint8_t fast_offset_compensation() {
+    uint8_t err;
+    err = write_register(REG_FOC_CONF, 0x7D); // set target values for gyro and acc
+    if (err) {
+        printf("FOC error 1: %d\n", err);
+        return 1;
+    }
+    err = write_register(REG_CMD, CMD_START_FOC);
+    if (err) {
+        printf("FOC enable error 3: %d\n", err);
+        return 2;
+    }
+    HAL_Delay(250);
+    err = write_register(REG_OFFSET_6, 0xC0); // enable foc for gyro and acc
+    if (err) {
+        printf("FOC enable error 4: %d\n", err);
+        return 3;
+    }
+    return 0;
+}
+
 uint8_t read_acc_x(int16_t *value) {
     uint8_t temp;
     read_register(REG_ACC_X_0, &temp); // acc_x register part 1
@@ -57,6 +148,55 @@ uint8_t read_acc_z(int16_t *value) {
     read_register(REG_ACC_Z_0, &temp); // acc_z register part 1
     *value = temp;
     read_register(REG_ACC_Z_1, &temp); // acc_z register part 2
+    *value = (*value) | (temp << 8);
+    return 0;
+}
+uint8_t read_gyro_x(int16_t *value) {
+    uint8_t temp;
+    read_register(REG_GYRO_X_0, &temp); // gyro_x register part 1
+    *value = temp;
+    read_register(REG_GYRO_X_1, &temp); // gyro_x register part 2
+    *value = (*value) | (temp << 8);
+    return 0;
+}
+uint8_t read_gyro_y(int16_t *value) {
+    uint8_t temp;
+    read_register(REG_GYRO_Y_0, &temp); // gyro_y register part 1
+    *value = temp;
+    read_register(REG_GYRO_Y_1, &temp); // gyro_y register part 2
+    *value = (*value) | (temp << 8);
+    return 0;
+}
+uint8_t read_gyro_z(int16_t *value) {
+    uint8_t temp;
+    read_register(REG_GYRO_Z_0, &temp); // gyro_z register part 1
+    *value = temp;
+    read_register(REG_GYRO_Z_1, &temp); // gyro_z register part 2
+    *value = (*value) | (temp << 8);
+    return 0;
+}
+
+uint8_t read_mag_x(int16_t *value) {
+    uint8_t temp;
+    read_register(REG_MAG_X_0, &temp); // mag_x register part 1
+    *value = temp;
+    read_register(REG_MAG_X_1, &temp); // mag_x register part 2
+    *value = (*value) | (temp << 8);
+    return 0;
+}
+uint8_t read_mag_y(int16_t *value) {
+    uint8_t temp;
+    read_register(REG_MAG_Y_0, &temp); // mag_y register part 1
+    *value = temp;
+    read_register(REG_MAG_Y_1, &temp); // mag_y register part 2
+    *value = (*value) | (temp << 8);
+    return 0;
+}
+uint8_t read_mag_z(int16_t *value) {
+    uint8_t temp;
+    read_register(REG_MAG_Z_0, &temp); // mag_z register part 1
+    *value = temp;
+    read_register(REG_MAG_Z_1, &temp); // mag_z register part 2
     *value = (*value) | (temp << 8);
     return 0;
 }

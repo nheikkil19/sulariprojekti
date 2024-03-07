@@ -1,11 +1,7 @@
 from pynput.keyboard import Key, Listener
 import socket
-from time import sleep
 from threading import Thread
-import os
 
-osName = os.name
-print(osName)
 file = open('output.csv', 'w', encoding="utf-8")
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.settimeout(1)
@@ -68,20 +64,23 @@ def receiveData():
             continue
         except OSError:
             break
-        if ("bump" not in response.decode()) and ("slope" not in response.decode()):
-            try:
-                numbers = response.decode().replace("\r\n", "").split(",")
-                numbers_new = [0, 0, 0]
-                numbers_new[0] = str(int(numbers[0]) / 16384 * 9.81)
-                numbers_new[1] = str(int(numbers[1]) / 16384 * 9.81)
-                numbers_new[2] = str(int(numbers[2]) / 16384 * 9.81)
-                result = ",".join(numbers_new) + "\n"
-                file.write(result)
-                print(result, end="")
-            except ValueError:
-                print(response)
-        else:
-            print(response)
+        #if ("bump" not in response.decode()) and ("slope" not in response.decode()):
+        try:
+            numbers = response.decode().replace("\r\n", "").split(",")
+            numbers_new = [0, 0, 0]
+            numbers_new[0] = str(int(numbers[0]) / 16384 * 9.81)
+            numbers_new[1] = str(int(numbers[1]) / 16384 * 9.81)
+            numbers_new[2] = str(int(numbers[2]) / 16384 * 9.81)
+            result = ",".join(numbers_new) + "\n"
+            file.write(result)
+            #print(result, end="")
+        except (ValueError, IndexError):
+            if "bump" in response.decode():
+                print("bump detected")
+            elif "slope" in response.decode():
+                print("slope detected")
+        #else:
+        #    print(response)
     return False
       
 # Collect events until released

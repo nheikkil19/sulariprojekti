@@ -1,13 +1,20 @@
 from pynput.keyboard import Key, Listener
 import socket
 from time import sleep
+from threading import Thread
+import os
 
+osName = os.name
+print(osName)
 file = open('output.csv', 'w', encoding="utf-8")
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.settimeout(1)
 sock.connect(("192.168.4.1", 333))
+isEscPressed = False
 
  
 def on_press(key):
+    global isEscPressed
     if key == Key.up:
         print("UP")
     elif key == Key.down:
@@ -23,9 +30,10 @@ def on_press(key):
     elif key == Key.page_down:
         print("pgdown")
     elif key == Key.esc:
+        isEscPressed = True
         sock.close()
         file.close()
-        exit()
+        return False
  
  
 def on_release(key):
@@ -50,28 +58,41 @@ def on_release(key):
     elif key == Key.page_down:
         print("pgdown release")
         sock.sendall("slower".encode('utf-8'))
- 
 
-
+def receiveData():
+    global isEscPressed
+    while not isEscPressed:
+        try:
+            response = sock.recv(64)
+        except  TimeoutError:
+            continue
+        except OSError:
+            break
+        if ("bump" not in response.decode()) and ("slope" not in response.decode()):
+            try:
+                numbers = response.decode().replace("\r\n", "").split(",")
+                numbers_new = [0, 0, 0]
+                numbers_new[0] = str(int(numbers[0]) / 16384 * 9.81)
+                numbers_new[1] = str(int(numbers[1]) / 16384 * 9.81)
+                numbers_new[2] = str(int(numbers[2]) / 16384 * 9.81)
+                result = ",".join(numbers_new) + "\n"
+                file.write(result)
+                print(result, end="")
+            except ValueError:
+                print(response)
+        else:
+            print(response)
+    return False
       
 # Collect events until released
 with Listener(
         on_press=on_press,
         on_release=on_release) as listener:
-    
-    while True:
-        response = sock.recv(64)
-        if ("bump" not in response.decode()) and ("slope" not in response.decode()):
-            numbers = response.decode().replace("\r\n", "").split(",")
-            numbers_new = [0, 0, 0]
-            numbers_new[0] = str(int(numbers[0]) / 16384 * 9.81)
-            numbers_new[1] = str(int(numbers[1]) / 16384 * 9.81)
-            numbers_new[2] = str(int(numbers[2]) / 16384 * 9.81)
-            result = ",".join(numbers_new) + "\n"
-            file.write(result)
-            print(result, end="")
-        else:
-            print(response)
-    listener.join()
 
+    readThread = Thread(target=receiveData)
+    readThread.start()
+    
+    
+    listener.join()
+    readThread.join()
 

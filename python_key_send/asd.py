@@ -1,12 +1,20 @@
 from pynput.keyboard import Key, Listener
 import socket
 from threading import Thread
+from datetime import datetime
+import os
 
-file = open("output.csv", "w", encoding="utf-8")
+
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.settimeout(1)
 sock.connect(("192.168.4.1", 333))
 isEscPressed = False
+
+OUTPUT = "output"
+if not os.path.exists(OUTPUT):
+    os.mkdir(OUTPUT)
+date = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
+file = open(f"{OUTPUT}/{date}.csv", "w", encoding="utf-8")
 
 
 def on_press(key):
@@ -65,23 +73,16 @@ def receiveData():
             continue
         except OSError:
             break
-        # if ("bump" not in response.decode()) and ("slope" not in response.decode()):
         try:
             numbers = response.decode().replace("\r\n", "").split(",")
-            numbers_new = [0, 0, 0]
-            numbers_new[0] = str(int(numbers[0]) / 16384 * 9.81)
-            numbers_new[1] = str(int(numbers[1]) / 16384 * 9.81)
-            numbers_new[2] = str(int(numbers[2]) / 16384 * 9.81)
+            numbers_new = [str(int(number) / 16384 * 9.81) for number in numbers]
             result = ",".join(numbers_new) + "\n"
             file.write(result)
-            # print(result, end="")
         except (ValueError, IndexError):
             if "bump" in response.decode():
                 print("bump detected")
             elif "slope" in response.decode():
                 print("slope detected")
-        # else:
-        #    print(response)
     return False
 
 

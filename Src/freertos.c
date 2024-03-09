@@ -37,12 +37,13 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 enum State {
+  INIT,
   STOP,
   LEFT,
   RIGHT,
   FORWARD,
   BACKWARD
-} state = STOP;
+} state = INIT;
 
 /* USER CODE END PTD */
 
@@ -84,7 +85,14 @@ osThreadId_t distanceSensorHandle;
 const osThreadAttr_t distanceSensor_attributes = {
   .name = "distanceSensor",
   .stack_size = 128 * 4,
-  .priority = (osPriority_t) osPriorityLow,
+  .priority = (osPriority_t) osPriorityNormal,
+};
+/* Definitions for sendDataTask */
+osThreadId_t sendDataTaskHandle;
+const osThreadAttr_t sendDataTask_attributes = {
+  .name = "sendDataTask",
+  .stack_size = 128 * 4,
+  .priority = (osPriority_t) osPriorityHigh,
 };
 
 /* Private function prototypes -----------------------------------------------*/
@@ -95,6 +103,7 @@ const osThreadAttr_t distanceSensor_attributes = {
 void StartDefaultTask(void *argument);
 void StartReadEspUart(void *argument);
 void StartDistanceSensor(void *argument);
+void StartSendDataTask(void *argument);
 
 void MX_FREERTOS_Init(void); /* (MISRA C 2004 rule 8.1) */
 
@@ -134,6 +143,9 @@ void MX_FREERTOS_Init(void) {
   /* creation of distanceSensor */
   distanceSensorHandle = osThreadNew(StartDistanceSensor, NULL, &distanceSensor_attributes);
 
+  /* creation of sendDataTask */
+  sendDataTaskHandle = osThreadNew(StartSendDataTask, NULL, &sendDataTask_attributes);
+
   /* USER CODE BEGIN RTOS_THREADS */
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
@@ -154,12 +166,14 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void *argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
-  char msg[64];
   HAL_UARTEx_ReceiveToIdle_DMA(&huart1, rxbuffer, RXBUFFERSIZE);
-
   reset_esp();
+  echo_off();
   open_socket();
   enable_wifi();
+  // Set state to stop after init done
+  Atomic_CompareAndSwap_u32((uint32_t*)&state, STOP, state);
+  printf("ESP init done\n");
   /* Infinite loop */
   for(;;)
   {
@@ -178,11 +192,6 @@ void StartDefaultTask(void *argument)
     else if (state == RIGHT) {
       drive_right(40);
     }
-    read_acc_x(&acc_x);
-    read_acc_y(&acc_y);
-    read_acc_z(&acc_z);
-    sprintf(msg, "%d,%d,%d\r\n", acc_x, acc_y, acc_z);
-    send_tcp_message(msg);
     osDelay(100);
   }
   /* USER CODE END StartDefaultTask */
@@ -205,9 +214,9 @@ void StartReadEspUart(void *argument)
     printf("< ");
     // Read from mainbuffer
     for (; read_start!=write_end; read_start=(read_start+1) % MAINBUFFERSIZE) {
-    putchar(mainbuffer[read_start]);
+      putchar(mainbuffer[read_start]);
     }
-      putchar('\n');
+    putchar('\n');
     }
     osDelay(100);
   }
@@ -225,6 +234,8 @@ void StartDistanceSensor(void *argument)
 {
   /* USER CODE BEGIN StartDistanceSensor */
   float dist;
+  // Wait until esp is ready
+  while (state == INIT) osDelay(500);
   /* Infinite loop */
   for(;;)
   {
@@ -237,9 +248,39 @@ void StartDistanceSensor(void *argument)
   /* USER CODE END StartDistanceSensor */
 }
 
+/* USER CODE BEGIN Header_StartSendDataTask */
+/**
+* @brief Function implementing the sendDataTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartSendDataTask */
+void StartSendDataTask(void *argument)
+{
+  /* USER CODE BEGIN StartSendDataTask */
+  /* Infinite loop */
+  char msg[64];
+  int16_t acc_x, acc_y, acc_z;
+
+  // Wait until esp is ready
+  while (state == INIT) osDelay(500);
+  for(;;)
+  {
+    read_acc_x(&acc_x);
+    read_acc_y(&acc_y);
+    read_acc_z(&acc_z);
+    snprintf(msg, 64, "%d,%d,%d\r\n", acc_x, acc_y, acc_z);
+    send_tcp_message(msg);
+    osDelay(1000);
+  }
+  /* USER CODE END StartSendDataTask */
+}
+
 /* Private application code --------------------------------------------------*/
 /* USER CODE BEGIN Application */
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
+  uint8_t *start;
+  uint8_t const margin = 12;
   // Idea from https://controllerstech.com/uart-dma-with-idle-line-detection/
   if (huart->Instance == USART1) {
     old_write_end = write_end; // Write position of mainbuffer
@@ -254,28 +295,34 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
       memcpy(mainbuffer + old_write_end, rxbuffer, size);
       write_end = size + old_write_end;
     }
-    // Find some string from rxbuffer
-    if (strstr((char*)rxbuffer, "stop")) {
+    // First check if string is in rxbuffer, then check it in the start of the buffer.
+    // Otherwise it might find old strings from end of the buffer
+    if ((start = (uint8_t*)strstr((char*)rxbuffer, "stop")) && start < rxbuffer + margin) {
+      printf("1\n");
       Atomic_CompareAndSwap_u32((uint32_t*)&state, STOP, state);
     }
-    else if (strstr((char*)rxbuffer, "forward")) {
+    else if ((start = (uint8_t*)strstr((char*)rxbuffer, "forward")) && start < rxbuffer + margin) {
+      printf("2\n");
       Atomic_CompareAndSwap_u32((uint32_t*)&state, FORWARD, state);
     }
-    else if (strstr((char*)rxbuffer, "back")) {
+    else if ((start = (uint8_t*)strstr((char*)rxbuffer, "back")) && start < rxbuffer + margin) {
+      printf("3\n");
       Atomic_CompareAndSwap_u32((uint32_t*)&state, BACKWARD, state);
     }
-    else if (strstr((char*)rxbuffer, "left")) {
+    else if ((start = (uint8_t*)strstr((char*)rxbuffer, "left")) && start < rxbuffer + margin) {
+      printf("4\n");
       Atomic_CompareAndSwap_u32((uint32_t*)&state, LEFT, state);
     }
-    else if (strstr((char*)rxbuffer, "right")) {
+    else if ((start = (uint8_t*)strstr((char*)rxbuffer, "right")) && start < rxbuffer + margin) {
+      printf("5\n");
       Atomic_CompareAndSwap_u32((uint32_t*)&state, RIGHT, state);
     }
-    else if (strstr((char*)rxbuffer, "faster")) {
+    else if ((start = (uint8_t*)strstr((char*)rxbuffer, "faster")) && start < rxbuffer + margin) {
       if (speed <= 90) {
         Atomic_Add_u32((uint32_t*)&speed, 10);
       }
     }
-    else if (strstr((char*)rxbuffer, "slower")) {
+    else if ((start = (uint8_t*)strstr((char*)rxbuffer, "slower")) && start < rxbuffer + margin) {
       if (speed >= 20) {
         Atomic_Subtract_u32((uint32_t*)&speed, 10);
       }

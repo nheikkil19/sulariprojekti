@@ -260,16 +260,16 @@ void StartSendDataTask(void *argument)
   /* USER CODE BEGIN StartSendDataTask */
   /* Infinite loop */
   char msg[64];
-  int16_t acc_x, acc_y, acc_z;
+  int16_t mag_x, mag_y, mag_z;
 
   // Wait until esp is ready
   while (state == INIT) osDelay(500);
   for(;;)
   {
-    read_acc_x(&acc_x);
-    read_acc_y(&acc_y);
-    read_acc_z(&acc_z);
-    snprintf(msg, 64, "%d,%d,%d\r\n", acc_x, acc_y, acc_z);
+    read_mag_x(&mag_x);
+    read_mag_y(&mag_y);
+    read_mag_z(&mag_z);
+    snprintf(msg, 64, "%d,%d,%d\r\n", mag_x, mag_y, mag_z);
     send_tcp_message(msg);
     osDelay(1000);
   }

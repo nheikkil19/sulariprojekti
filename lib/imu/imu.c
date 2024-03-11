@@ -87,7 +87,7 @@ uint8_t setup_mag() {
         printf("Mag setup error 10: %d\n", err);
         return 10;
     }
-    err = write_register(REG_MAG_CONF, 0x08);
+    err = write_register(REG_MAG_CONF, 0x05);
     if (err) {
         printf("Mag setup error 11: %d\n", err);
         return 11;

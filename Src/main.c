@@ -104,10 +104,10 @@ int main(void)
   /* USER CODE BEGIN 2 */
   softreset();
   normalmodes();
+  setup_mag();
   configure_interrupt_pins();
   configure_bump_interrupt();
   configure_slope_interrupt();
-  configure_data_ready_interrupt();
   fast_offset_compensation();
   printf("Init done\n");
   /* USER CODE END 2 */

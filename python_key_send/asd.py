@@ -15,6 +15,7 @@ if not os.path.exists(OUTPUT):
     os.mkdir(OUTPUT)
 date = datetime.now().strftime("%Y-%m-%d-%H-%M-%S")
 file = open(f"{OUTPUT}/{date}.csv", "w", encoding="utf-8")
+file.write("mag_x, mag_y, mag_z\n")
 
 
 def on_press(key):
@@ -75,7 +76,7 @@ def receiveData():
             break
         try:
             numbers = response.decode().replace("\r\n", "").split(",")
-            numbers_new = [str(int(number) / 16384 * 9.81) for number in numbers]
+            numbers_new = [str(int(number) / 16) for number in numbers]
             result = ",".join(numbers_new) + "\n"
             file.write(result)
         except (ValueError, IndexError):

@@ -298,23 +298,18 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t size) {
     // First check if string is in rxbuffer, then check it in the start of the buffer.
     // Otherwise it might find old strings from end of the buffer
     if ((start = (uint8_t*)strstr((char*)rxbuffer, "stop")) && start < rxbuffer + margin) {
-      printf("1\n");
       Atomic_CompareAndSwap_u32((uint32_t*)&state, STOP, state);
     }
     else if ((start = (uint8_t*)strstr((char*)rxbuffer, "forward")) && start < rxbuffer + margin) {
-      printf("2\n");
       Atomic_CompareAndSwap_u32((uint32_t*)&state, FORWARD, state);
     }
     else if ((start = (uint8_t*)strstr((char*)rxbuffer, "back")) && start < rxbuffer + margin) {
-      printf("3\n");
       Atomic_CompareAndSwap_u32((uint32_t*)&state, BACKWARD, state);
     }
     else if ((start = (uint8_t*)strstr((char*)rxbuffer, "left")) && start < rxbuffer + margin) {
-      printf("4\n");
       Atomic_CompareAndSwap_u32((uint32_t*)&state, LEFT, state);
     }
     else if ((start = (uint8_t*)strstr((char*)rxbuffer, "right")) && start < rxbuffer + margin) {
-      printf("5\n");
       Atomic_CompareAndSwap_u32((uint32_t*)&state, RIGHT, state);
     }
     else if ((start = (uint8_t*)strstr((char*)rxbuffer, "faster")) && start < rxbuffer + margin) {
